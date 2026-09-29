@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ustaad — AI Teacher</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Caveat:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap"
+    rel="stylesheet">
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body>
+  <div id="app">
+
+    <div class="topbar">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 40 40" fill="none">
+          <circle cx="20" cy="20" r="19" stroke="#E8B84B" stroke-width="1.4" stroke-dasharray="3 4" />
+          <path d="M12 25 Q20 12 28 25" stroke="#F3EFE3" stroke-width="1.6" fill="none" stroke-linecap="round" />
+          <circle cx="14.5" cy="17" r="1.6" fill="#F3EFE3" />
+          <circle cx="25.5" cy="17" r="1.6" fill="#F3EFE3" />
+        </svg>
+        <div>
+          <div class="brand-name">Ustaad <span class="chalk-hand" style="color:var(--amber);font-size:20px;">— AI
+              Teacher</span></div>
+        </div>
+      </div>
+      <div id="progressPill" class="progress-pill hidden">
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill" style="width:0%"></div>
+        </div>
+        <span id="progressLabel">0 / 0</span>
+      </div>
+    </div>
+
+    <!-- Setup Screen -->
+    <div id="screenSetup">
+      <div class="setup-grid">
+        <div class="panel panel-pad">
+          <div class="eyebrow">Step 1 — What should I teach?</div>
+          <div class="tabs">
+            <button class="tab-btn active" data-tab="topic" onclick="UI.switchTab('topic')">Teach a topic</button>
+            <button class="tab-btn" data-tab="material" onclick="UI.switchTab('material')">Teach from my
+              material</button>
+          </div>
+
+          <div id="tabTopic">
+            <div class="field">
+              <label>Topic or instruction</label>
+              <textarea id="topicInput"
+                placeholder="e.g. Teach me Ohm's Law for a Class 10 student, with real-life examples.">Explain photosynthesis to me from the beginning.</textarea>
+            </div>
+          </div>
+
+          <div id="tabMaterial" class="hidden">
+            <div class="field">
+              <label>Paste your notes / chapter / textbook excerpt</label>
+              <textarea id="materialInput" placeholder="Paste text here — or upload a file below."></textarea>
+            </div>
+            <div class="field">
+              <label>Upload (.txt, .pdf, .docx)</label>
+              <div class="upload-zone" id="uploadZone">Click to choose a file, or drag it here<br><span
+                  id="uploadStatus" style="color:var(--chalk-faint)"></span></div>
+              <input type="file" id="fileInput" accept=".txt,.pdf,.docx" class="hidden">
+            </div>
+            <div class="field">
+              <label>Focus area (optional)</label>
+              <input type="text" id="materialFocus" placeholder="e.g. Chapter 1, section 2">
+            </div>
+          </div>
+        </div>
+
+        <div class="panel panel-pad">
+          <div class="eyebrow">Step 2 — Personalize Teacher & Voice</div>
+
+          <div class="field">
+            <label>Teaching Language</label>
+            <select id="langSelect">
+              <option value="English">English</option>
+              <option value="Hindi">Hindi (हिंदी)</option>
+              <option value="Hinglish (Hindi+English mix)">Hinglish</option>
+              <option value="Bengali">Bengali (বাংলা)</option>
+              <option value="Tamil">Tamil (தமிழ்)</option>
+              <option value="Telugu">Telugu (తెలుగు)</option>
+              <option value="Marathi">Marathi (मराठी)</option>
+              <option value="Gujarati">Gujarati (ગુજરાતી)</option>
+              <option value="Kannada">Kannada (ಕನ್ನಡ)</option>
+              <option value="Malayalam">Malayalam (മലയാളം)</option>
+              <option value="Punjabi">Punjabi (ਪੰਜਾਬੀ)</option>
+              <option value="Urdu">Urdu (اردو)</option>
+              <option value="Spanish">Spanish (Español)</option>
+              <option value="French">French (Français)</option>
+              <option value="German">German (Deutsch)</option>
+              <option value="Arabic">Arabic (العربية)</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Teacher Voice</label>
+            <select id="voicePersonaSelect">
+              <option value="">Loading system voices...</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Student Level</label>
+            <div class="chip-row" id="levelChips">
+              <button class="chip" data-val="beginner">Beginner</button>
+              <button class="chip active" data-val="intermediate">Intermediate</button>
+              <button class="chip" data-val="advanced">Advanced</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Time available</label>
+            <div class="chip-row" id="timeChips">
+              <button class="chip" data-val="5">5 min</button>
+              <button class="chip active" data-val="20">20 min</button>
+              <button class="chip" data-val="60">60 min</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Student Name</label>
+            <input type="text" id="studentName" value="Student">
+          </div>
+
+          <button class="btn wide" id="startBtn" onclick="App.startLesson()">Start teaching session →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="screenLoading" class="hidden">
+      <div class="panel">
+        <div class="loading-wrap">
+          <div class="chalk-spinner"></div>
+          <div class="loading-text" id="loadingText">Preparing classroom…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lesson Screen -->
+    <div id="screenLesson" class="hidden">
+      <div class="lesson-grid">
+        <div class="board" id="boardArea">
+
+          <!-- Animated Teacher Avatar Area -->
+          <div class="avatar-stage">
+            <div class="avatar-canvas-wrap">
+              <svg id="avatarSvg" viewBox="0 0 200 200" class="teacher-avatar"></svg>
+            </div>
+            <div class="avatar-meta">
+              <div id="speakBubble" class="speak-bubble">Hello! I am ready to begin.</div>
+              <div class="avatar-controls">
+                <label class="voice-toggle">
+                  <input type="checkbox" id="voiceModeToggle" onchange="App.toggleVoiceMode(this.checked)">
+                  🎙️ Voice interaction
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="listening-banner" id="listeningBanner"><span class="dot"></span> Listening to your response…</div>
+          <div id="beatContent" class="fade-in"></div>
+
+          <div class="controls-row">
+            <div class="lang-quick">
+              <button class="btn secondary small" onclick="App.replay()">🔊 Replay Voice</button>
+              <button class="btn secondary small" onclick="App.askDoubtPrompt()">❓ Ask Doubt</button>
+            </div>
+            <button class="btn" id="continueBtn" onclick="App.next()">Continue →</button>
+          </div>
+        </div>
+
+        <div class="side-panel">
+          <div class="panel panel-pad">
+            <div class="eyebrow">Session Info</div>
+            <div class="profile-row"><span>Topic</span><span id="sideTopic">—</span></div>
+            <div class="profile-row"><span>Level</span><span id="sideLevel">—</span></div>
+            <div class="profile-row"><span>Language</span><span id="sideLang">—</span></div>
+            <div class="profile-row"><span>Score</span><span id="sideScore">0 / 0</span></div>
+            <div style="margin-top:10px;" id="conceptTags"></div>
+          </div>
+
+          <div class="panel panel-pad">
+            <div class="eyebrow">Doubt Clearance</div>
+            <div id="doubtLog" class="doubt-log"><span style="color:var(--chalk-faint)">Your questions mid-lesson will
+                be answered in real-time.</span></div>
+            <div style="display:flex;gap:8px;margin-top:10px;">
+              <input type="text" id="doubtInput" placeholder="Ask any question…" style="flex:1;">
+              <button class="mic-btn" id="doubtMicBtn" onclick="App.toggleDoubtMic()" title="Speak question">🎤</button>
+              <button class="btn small" onclick="App.askDoubt()">Ask</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Report Screen -->
+    <div id="screenReport" class="hidden">
+      <div class="panel panel-pad">
+        <div class="eyebrow">Learning Summary</div>
+        <h2 id="reportTitle" style="margin:0 0 4px;">—</h2>
+        <div style="color:var(--chalk-faint);font-size:13px;" id="reportSub"></div>
+
+        <div style="display:flex;gap:28px;align-items:center;margin-top:22px;flex-wrap:wrap;">
+          <div style="text-align:center;">
+            <div id="scoreBig" style="font-size:52px;font-weight:700;font-family:'Space Grotesk';color:var(--amber);">—
+            </div>
+            <div style="color:var(--chalk-faint);font-size:12px;">final score</div>
+          </div>
+          <div style="flex:1;min-width:220px;" id="reportSummary" class="beat-text"></div>
+        </div>
+
+        <div class="report-grid">
+          <div class="report-card" style="border-color:rgba(143,191,127,0.35);">
+            <h4 style="color:var(--sage);">Strengths</h4>
+            <ul id="strongList"></ul>
+          </div>
+          <div class="report-card" style="border-color:rgba(228,99,76,0.35);">
+            <h4 style="color:#f0a294;">Topics to Revisit</h4>
+            <ul id="weakList"></ul>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:22px;flex-wrap:wrap;">
+          <button class="btn" onclick="App.reviseWeak()">Revise Weak Topics</button>
+          <button class="btn secondary" onclick="App.reset()">Start New Topic</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+
+</html>
